@@ -82,7 +82,9 @@ Library packs are normal NuGet packages. When a library pack is installed, the n
 
 This location is used as a local feed by NuGet, not a fallback folder. If ones of these packages gets used, it will be extracted into the global packages folder. If the SDK is updated and the library pack is removed or replaced with a newer version, projects that have already been created and restored will continue to be able to use the extracted copy from the global packages folder.
 
-This is intended to be used to pre-download NuGet packages referenced by templates so that a workload can work offline after installation. It should be used sparingly i.e. only for NuGets referenced by the core templates with default or popular options.
+Library packs are intended to be used to pre-download NuGet packages referenced by templates so that a workload can work offline after installation. Core workloads should include library packs very sparingly, if at all. Instead, it is strongly recommended that library packs are contained in separate workloads with the ID suffix `-offline-templates`. An offline template workload should only contain library packs referenced by templates, and should extend the workload that contains the templates.
+
+> NOTE: SDK targets should **not** implicitly add `PackageReference` items. They should instead add `FrameworkReference` items that resolve to runtime packs and targeting packs.
 
 ## Template Packs
 
@@ -174,18 +176,51 @@ Workload definitions take the following form:
 |--|--|--|--|
 | `abstract` | bool | If `true`, this workload can only be extended, and is never exposed directly as an installable workload. Default is `false`. | No |
 | `kind` | string | Either `build` or `dev`. Default is `dev`. | No |
-| `description` | int | User-visible description for the workload. | Yes if dev and non-abstract |
+| `description` | string | User-visible description for the workload. | Yes if dev and non-abstract |
 | `packs` | string array | IDs of the packs that are included in the workload. | No |
-| `extends` | string array | IDs of workloads whose packs should be included in this workload. | No |
-| `platforms` | string array | Limits the workload and workloads that extend it to only be shown and installed on these host platforms. The strings are RIDs. | False |
+| `extends` | string array | IDs of "base" workloads whose packs should be included in this workload. | No |
+| `platforms` | string array | Restricts the workload and workloads that extend it to only be shown and installed on these host platforms. Inherits any restrictions imposed by base workloads. The strings are RIDs. | No |
+|`redirect-to` | string | The ID of another workload with which to replace this workload. Cannot coexist with any other keys. | No |
 
-At least one of `extends` or `packs` is required. If a workload resolves to zero packs, which is possible when some packs are platform-specific, it is implicitly abstract. A workload may transitively include the same pack multiple times or extend the same workload multiple times, and they will be deduplicated. As a consequence, recursive `extends` references are technically permitted but redundant and although they may result in validation warnings they will not result in runtime errors.
+### Workload Composition
+
+A workload is fundamentally a set of packs. This set can be defined using the `packs` key. A workload may also be defined as a union of the sets of packs from other workloads by composing them using `extends`. A workload must have either `extends` or `packs`, and may have both. If a workload resolves to zero packs, which is possible when some packs are platform-specific, it is implicitly abstract.
+
+Abstract workloads are workloads that cannot be installed directly. Their only purpose is to be extended by a concrete workload. This allows factoring out sets of packs into smaller abstract workloads that may be composed together using `extends`.
+
+A workload may transitively include the same pack multiple times or extend the same workload multiple times, and they will be deduplicated. As a consequence, recursive `extends` references are technically permitted and although they may result in validation warnings they will not currently result in runtime errors.
+
+As workloads are often supersets of other workloads, conceptualizing and defining these relationships in terms of `extends` makes it easier to understand and maintain. Updates to the packs in the base workload will be inherited by the extending workload. However, it is possible to include the same pack directly in multiple workloads.
+
+Although `extends` is a composition system, it may be useful to conceptualize it as an inheritance hierarchy, where a workload may "inherit" (extend) one or more base workloads, which may inherit other workloads in turn. Workloads marked as abstract may be inherited but cannot be "instantiated" (installed) directly.
+
+Workload composition may also be compared to package managers such as apt-get and NuGet. In this analogy, workloads are metapackages with unversioned dependencies and packs are packages that are only installable transitively.
+
+Platform restrictions are transitive across workload composition: a workload will inherit `platforms` restrictions from the workloads that it extends. The effective set of supported platforms for any workload is the intersection of its supported platforms and the platforms supported by base workloads.
+
+### Workload Kinds
 
 The `kind` allows structuring workloads into smaller pieces so that their download and install footprint on CI is smaller. `build` workloads should contain only the packs that are used to build projects. They do not need descriptions as they are not expected to be shown in the UX - they will only be used via a CI-specific UX such as `dotnet workload restore --build-only`.
 
 > *NOTE:* scenario-specific workload restore operations such as build-only restore have not yet been defined so this metadata is currently unused
 
-Note that `extends` is functionally a dependency system and a way to factor out common sets of packages from workloads. By analogy to package managers such as apt-get and NuGet, workloads are metapackages that only permit unversioned dependencies and packs are packages that are only installable transitively.
+### Redirects
+
+The `redirect-to` key allows renaming workloads in non-breaking way by
+redirecting the old ID to the new ID. When renaming a workload, add a workload
+definition for the old ID that has `redirect-to` set to the new ID. Any
+reference to the old ID will be interpreted as a reference to the new ID. This
+applies to installation records, `extends` values, and UI such as CLI commands
+and output. Installation records on disk may be updated to the new value at any
+point the installer implementation chooses to do so.
+
+```json
+"my-workload-old-id": { "redirect-to": "my-workload-new-id" }
+```
+
+As multiple redirect workloads may redirect into the same workload, redirects
+may be used to provided a better experience for deprecation in cases where the
+deprecated workload's functionality is available in a non-deprecated workload.
 
 ## Pack Definitions
 
@@ -202,6 +237,8 @@ Pack definitions take the following form:
 | `alias-to` | object | Optional platform-dependent NuGet package ID | No |
 
 The `framework` pack kind is used for runtime packs and targeting packs. The workload system does not make a distinction between them at this time.
+
+### Alias Packs
 
 A pack definition with the optional `alias-to` key is an *alias pack*. An alias pack has a virtual pack ID that doesn't need to correspond to a real NuGet package. When querying the workload manifest, alias packs resolve to concrete pack IDs in a platform-dependent way. The `alias-to` value is a JSON object, where the keys are host platform RIDs, and the values are NuGet package IDs.
 
@@ -515,4 +552,3 @@ This has the advantage that it does not introduce any new mechanisms. However, i
 - No compatibility checks and error experience when building project that uses newer APIs on SDK series that only has older APIs
 - Requires centralized coordination
 - Not scalable to nontrivial number of platforms and updates
-

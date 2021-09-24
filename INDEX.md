@@ -70,8 +70,13 @@ Use update-index to regenerate it:
 | 2020 | [Target Framework Names in .NET 5](accepted/2020/net5/net5.md) | [Immo Landwerth](https://github.com/terrajobst) |
 | 2020 | [Type for holding & converting binary data](accepted/2020/binary-data/binary-data.md) | [Immo Landwerth](https://github.com/terrajobst) |
 | 2021 | [.NET 6.0 Target Frameworks](accepted/2021/net6.0-tfms/net6.0-tfms.md) | [Immo Landwerth](https://github.com/terrajobst) |
+| 2021 | [.NET SDK build types and Architecture targeting](accepted/2021/architecture-targeting.md) | [Rich Lander](https://github.com/richlander) |
 | 2021 | [Compile-time source generation for strongly-typed logging messages](accepted/2021/logging-generator.md) | [Maryam Ariyan](https://github.com/maryamariyan), [Martin Taillefer](https://github.com/geeknoid) |
+| 2021 | [Inbox Source Generators](accepted/2021/InboxSourceGenerators.md) | [Eric StJohn](https://github.com/ericstj) |
+| 2021 | [Make `System.Drawing.Common` only supported on Windows](accepted/2021/system-drawing-win-only/system-drawing-win-only.md) | [Santiago Fernandez Madero](https://github.com/safern) |
+| 2021 | [Objective-C interoperability](accepted/2021/objectivec-interop.md) | [Aaron Robinson](https://github.com/AaronRobinsonMSFT) |
 | 2021 | [Preview Features](accepted/2021/preview-features/preview-features.md) | [Immo Landwerth](https://github.com/terrajobst) |
+| 2021 | [Streamline Windows Forms application configuration and bootstrap](accepted/2021/winforms/streamline-application-bootstrap.md) | [Igor Velikorossov](https://github.com/RussKie) |
 | 2021 | [TFM for .NET nanoFramework](accepted/2021/nano-framework-tfm/nano-framework-tfm.md) | [Immo Landwerth](https://github.com/terrajobst), [Laurent Ellerbach](https://github.com/Ellerbach), [José Simões](https://github.com/josesimoes) |
 | 2021 | [Tracking Platform Dependencies](accepted/2021/platform-dependencies/platform-dependencies.md) | [Matt Thalman](https://github.com/mthalman) |
 
@@ -87,6 +92,7 @@ Use update-index to regenerate it:
 
 |Year|Title|Owners|
 |----|-----|------|
+|  | [Rate limits](proposed/rate-limit.md) | [John Luo](https://github.com/juntaoluo), [Sourabh Shirhatti](https://github.com/shirhatti) |
 |  | [Readonly references in C# and IL verification.](proposed/verifiable-ref-readonly.md) |  |
 |  | [Ref returns in C# and IL verification.](proposed/verifiable-ref-returns.md) |  |
 
